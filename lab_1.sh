@@ -1,4 +1,9 @@
 #!/bin/bash
+is_alive_ping()
+{
+  ping -c 1 $1 > /dev/null
+  [ $? -eq 0 ] && echo Node with IP: $i is up.
+}
 
 while [ -n "$1" ]
 do
@@ -29,71 +34,39 @@ do
             echo -e "-mask\t\t./lab_1.sh -mask ens 192.168.31.5 (устанавливает указанный mask для указанного интерфейса)"
             echo -e "-gw\t\t./lab_1.sh -gw 192.168.132.15 (устанавливать gateway на указанный)"
             echo -e "-nmap_site\t./lab_1.sh -nmap_site google.com (карта сети для указанного сайта)"
-            echo -e "-nmap_loc\t./lab_1.sh -nmap_loc 192.168.0.1 (карта сети для указанного ip)"
+            echo -e "-nmap_loc\t./lab_1.sh -nmap_loc 192.168.0. (карта сети для указанного ip)"
             echo -e "-kill\t\t./lab_1.sh -kill 8080 (показ и выбор процесса для его убийства)"
         ;;
         "-i" | "-interface")
             ifconfig -a
         ;;
         "-u" | "-up")
-            shift
-            a=0
-            for i in $@
+            while [ true ]
             do
-                a=$(($a+1))
-                if 
-                    [ "$i" == "-h" ] || [ "$i" == "-help" ] || [ "$i" == "-i" ] || [ "$i" == "-interface" ] || 
-                    [ "$i" == "-u" ] || [ "$i" == "-up" ] || [ "$i" == "-d" ] || [ "$i" == "-down" ] || 
-                    [ "$i" == "-ip" ] || [ "$i" == "-mask" ] || [ "$i" == "-gate" ] || [ "$i" == "-nmap_loc" ] || 
-                    [ "$i" == "-gate" ] || [ "$i" == "-example" ]
-                then  
+                shift
+                if [ "$1" == "" ]
+                then
                     break
+                else 
+                    ifconfig $1 up
+                    echo "готово"                    
                 fi
             done
-        #-1
-            b=$(($a-1))
+        ;; 
         
-            for (( i=1; i<a; i++ ))
-            do   
-        
-                ifconfig $1 up
-        
-                if [ "$i" -lt "$b" ] 
-                then
-                    shift
-                fi
-            done  
-            echo "готово"   
-        ;;
         "-d" | "-down")
-            shift
-            a=0
-            for i in $@
+            while [ true ]
             do
-                a=$(($a+1))
-                if 
-                    [ "$i" == "-h" ] || [ "$i" == "-help" ] || [ "$i" == "-i" ] || [ "$i" == "-interface" ] || 
-                    [ "$i" == "-u" ] || [ "$i" == "-up" ] || [ "$i" == "-d" ] || [ "$i" == "-down" ] || 
-                    [ "$i" == "-ip" ] || [ "$i" == "-mask" ] || [ "$i" == "-gate" ] || [ "$i" == "-nmap_loc" ] || 
-                    [ "$i" == "-gate" ] || [ "$i" == "-example" ]
-                then 
+                shift
+                if [ "$1" == "" ]
+                then                    
                     break
+                else 
+                    ifconfig "$1" down
+                    echo "готово"                
                 fi
             done
-        
-            b=$(($a-1))
-        
-            for (( i=1; i<a; i++ ))
-            do        
-                ifconfig $1 down    
-                if [ "$i" -lt "$b" ] 
-                then
-                    shift
-                fi
-            done  
-            echo "готово"   
-            ;;
-        
+        ;;
         "-ip")
             shift
             if [[ ${1} == "" ]]
@@ -124,13 +97,16 @@ do
                 break
             else 
                 ip route delete default
-                ip roude add default via $1
+                ip route add default via $1
             fi
                 
         ;;
         "-nmap_loc")    
             shift
-            nmap -v -sP $1/24
+            for i in $1{1..255} 
+            do
+                is_alive_ping $i & disown
+            done
         ;;
         -"-nmap_site")
             shift
